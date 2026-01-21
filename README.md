@@ -1,6 +1,6 @@
 # 🏪 Merchant Payment & Onboarding System
 
-A .NET 8 Web API for merchant registration and payment processing.
+A .NET 10 Web API for merchant registration and payment processing.
 
 ## 🚀 Quick Start
 
