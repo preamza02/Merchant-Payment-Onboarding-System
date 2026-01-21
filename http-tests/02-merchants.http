@@ -1,0 +1,133 @@
+# ============================================================
+# API TEST FILE - MERCHANTS
+# ============================================================
+#
+# Test all merchant-related endpoints
+#
+# PREREQUISITE: Run 01-auth.http first to get a token!
+# ============================================================
+
+@baseUrl = http://localhost:5000
+
+# Paste your token here after logging in, OR run 01-auth.http first
+@token = YOUR_JWT_TOKEN_HERE
+
+# ============================================================
+# 1. REGISTER A NEW MERCHANT
+# ============================================================
+# Creates a new merchant in the system
+# Requires: Authentication
+
+### Register Merchant 1 - Coffee Shop
+# @name registerMerchant1
+POST {{baseUrl}}/api/merchants
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+    "businessName": "Coffee Corner",
+    "email": "coffee@example.com",
+    "phone": "+66891234567",
+    "address": "123 Main Street, Bangkok 10110",
+    "taxId": "1234567890123"
+}
+
+### Save Merchant ID
+@merchant1Id = {{registerMerchant1.response.body.merchantId}}
+
+### Register Merchant 2 - Restaurant
+# @name registerMerchant2
+POST {{baseUrl}}/api/merchants
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+    "businessName": "Thai Kitchen",
+    "email": "thai@example.com",
+    "phone": "+66899876543",
+    "address": "456 Sukhumvit Road, Bangkok 10110",
+    "taxId": "9876543210123"
+}
+
+@merchant2Id = {{registerMerchant2.response.body.merchantId}}
+
+### Register Merchant 3 - Electronics
+# @name registerMerchant3
+POST {{baseUrl}}/api/merchants
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+    "businessName": "Tech World",
+    "email": "tech@example.com",
+    "phone": "+66801112222",
+    "address": "789 Silom Road, Bangkok 10500",
+    "taxId": "1112223334445"
+}
+
+@merchant3Id = {{registerMerchant3.response.body.merchantId}}
+
+# ============================================================
+# 2. GET MERCHANT BY ID
+# ============================================================
+
+### Get Merchant 1 Details
+GET {{baseUrl}}/api/merchants/{{merchant1Id}}
+Authorization: Bearer {{token}}
+
+### Get Non-existent Merchant (Should return 404)
+GET {{baseUrl}}/api/merchants/00000000-0000-0000-0000-000000000000
+Authorization: Bearer {{token}}
+
+# ============================================================
+# 3. GET ALL MERCHANTS
+# ============================================================
+
+### Get All Merchants
+GET {{baseUrl}}/api/merchants
+Authorization: Bearer {{token}}
+
+# ============================================================
+# 4. UPDATE MERCHANT STATUS
+# ============================================================
+# Status values: Active, Inactive, Suspended, Pending
+
+### Suspend Merchant 1
+PUT {{baseUrl}}/api/merchants/{{merchant1Id}}/status
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+    "status": "Suspended"
+}
+
+### Check Merchant 1 Status After Suspension
+GET {{baseUrl}}/api/merchants/{{merchant1Id}}
+Authorization: Bearer {{token}}
+
+### Reactivate Merchant 1
+PUT {{baseUrl}}/api/merchants/{{merchant1Id}}/status
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+    "status": "Active"
+}
+
+### Set Merchant 2 to Inactive
+PUT {{baseUrl}}/api/merchants/{{merchant2Id}}/status
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+    "status": "Inactive"
+}
+
+### Try Invalid Status (Should fail)
+PUT {{baseUrl}}/api/merchants/{{merchant1Id}}/status
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+    "status": "InvalidStatus"
+}

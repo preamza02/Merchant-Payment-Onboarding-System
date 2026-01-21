@@ -1,0 +1,10 @@
+{
+  "version": 2,
+  "dgSpecHash": "+hbp+GFLxS4=",
+  "success": true,
+  "projectFilePath": "/home/prame/Project/Merchant Payment & Onboarding/src/MerchantPayment.Domain/MerchantPayment.Domain.csproj",
+  "expectedPackageFiles": [
+    "/home/prame/.nuget/packages/microsoft.aspnetcore.app.ref/10.0.0/microsoft.aspnetcore.app.ref.10.0.0.nupkg.sha512"
+  ],
+  "logs": []
+}

@@ -1,0 +1,237 @@
+# ============================================================
+# COMPLETE END-TO-END WORKFLOW TEST
+# ============================================================
+#
+# This file contains a complete workflow to test ALL features
+# Run each request in order (top to bottom)
+#
+# QUICK START:
+# 1. Start the API: make docker-up
+# 2. Wait for containers to be healthy
+# 3. Click "Send Request" on each block below
+# ============================================================
+
+@baseUrl = http://localhost:5000
+
+# ============================================================
+# STEP 1: Health Check
+# ============================================================
+
+### Check API is Running
+GET {{baseUrl}}/health
+
+# ============================================================
+# STEP 2: Register User
+# ============================================================
+
+### Register Test User
+# @name register
+POST {{baseUrl}}/api/auth/register
+Content-Type: application/json
+
+{
+    "username": "e2euser",
+    "email": "e2e@example.com",
+    "password": "E2EPassword123!"
+}
+
+# ============================================================
+# STEP 3: Login
+# ============================================================
+
+### Login to Get Token
+# @name login
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+    "username": "e2euser",
+    "password": "E2EPassword123!"
+}
+
+### Save Token (auto-extracted from login response)
+@token = {{login.response.body.token}}
+
+# ============================================================
+# STEP 4: Create a Merchant
+# ============================================================
+
+### Register a Merchant
+# @name createMerchant
+POST {{baseUrl}}/api/merchants
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+    "businessName": "E2E Test Store",
+    "email": "e2estore@example.com",
+    "phone": "+66811112222",
+    "address": "123 Test Street, Bangkok",
+    "taxId": "1234567890123"
+}
+
+### Save Merchant ID
+@merchantId = {{createMerchant.response.body.merchantId}}
+
+# ============================================================
+# STEP 5: Verify Merchant Created
+# ============================================================
+
+### Get Merchant Details
+GET {{baseUrl}}/api/merchants/{{merchantId}}
+Authorization: Bearer {{token}}
+
+### List All Merchants
+GET {{baseUrl}}/api/merchants
+Authorization: Bearer {{token}}
+
+# ============================================================
+# STEP 6: Create a Payment
+# ============================================================
+
+### Initiate Payment
+# @name createPayment
+POST {{baseUrl}}/api/payments
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+    "merchantId": "{{merchantId}}",
+    "amount": 299.99,
+    "currency": "THB",
+    "description": "E2E Test Purchase",
+    "idempotencyKey": "e2e-test-001"
+}
+
+### Save Transaction ID
+@transactionId = {{createPayment.response.body.transactionId}}
+
+# ============================================================
+# STEP 7: Check Transaction Status (Should be Pending)
+# ============================================================
+
+### Get Transaction (Status: Pending)
+GET {{baseUrl}}/api/payments/{{transactionId}}
+Authorization: Bearer {{token}}
+
+# ============================================================
+# STEP 8: Simulate Bank Callback (Success)
+# ============================================================
+
+### Process Callback - Mark as Success
+POST {{baseUrl}}/api/payments/callback
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+    "transactionId": "{{transactionId}}",
+    "result": "Success",
+    "externalReferenceId": "BANK-E2E-001",
+    "message": "Payment approved"
+}
+
+# ============================================================
+# STEP 9: Verify Transaction Updated
+# ============================================================
+
+### Get Transaction (Status: Success)
+GET {{baseUrl}}/api/payments/{{transactionId}}
+Authorization: Bearer {{token}}
+
+# ============================================================
+# STEP 10: List All Merchant Transactions
+# ============================================================
+
+### Get All Transactions for Merchant
+GET {{baseUrl}}/api/payments/merchant/{{merchantId}}
+Authorization: Bearer {{token}}
+
+# ============================================================
+# STEP 11: Test Merchant Status Update
+# ============================================================
+
+### Suspend Merchant
+PUT {{baseUrl}}/api/merchants/{{merchantId}}/status
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+    "status": "Suspended"
+}
+
+### Try Payment to Suspended Merchant (Should Fail)
+POST {{baseUrl}}/api/payments
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+    "merchantId": "{{merchantId}}",
+    "amount": 50.00,
+    "currency": "THB",
+    "description": "This should fail"
+}
+
+### Reactivate Merchant
+PUT {{baseUrl}}/api/merchants/{{merchantId}}/status
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+    "status": "Active"
+}
+
+### Payment After Reactivation (Should Succeed)
+POST {{baseUrl}}/api/payments
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+    "merchantId": "{{merchantId}}",
+    "amount": 50.00,
+    "currency": "THB",
+    "description": "This should work now"
+}
+
+# ============================================================
+# STEP 12: Test Idempotency
+# ============================================================
+
+### First Request with Idempotency Key
+# @name idempotent1
+POST {{baseUrl}}/api/payments
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+    "merchantId": "{{merchantId}}",
+    "amount": 100.00,
+    "currency": "THB",
+    "idempotencyKey": "unique-key-12345"
+}
+
+### Second Request with SAME Key (Should return same transaction)
+# @name idempotent2
+POST {{baseUrl}}/api/payments
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+    "merchantId": "{{merchantId}}",
+    "amount": 100.00,
+    "currency": "THB",
+    "idempotencyKey": "unique-key-12345"
+}
+
+# ============================================================
+# 🎉 END-TO-END TEST COMPLETE!
+# ============================================================
+#
+# If all requests above succeeded:
+# ✅ Authentication works
+# ✅ Merchant registration works
+# ✅ Payment initiation works
+# ✅ Callback processing works
+# ✅ Status updates work
+# ✅ Idempotency works
+#
+# ============================================================

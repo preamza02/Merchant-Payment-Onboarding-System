@@ -1,0 +1,60 @@
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: merchant-payment-mysql
+    
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: MerchantPaymentDB
+      MYSQL_USER: appuser
+      MYSQL_PASSWORD: apppassword
+    
+    ports:
+      - "3306:3306"
+    
+    volumes:
+      - mysql_data:/var/lib/mysql
+    
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-prootpassword"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    
+    networks:
+      - merchant-network
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    
+    container_name: merchant-payment-api
+    
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:8080
+      - ConnectionStrings__DefaultConnection=Server=mysql;Port=3306;Database=MerchantPaymentDB;User=root;Password=rootpassword;
+      - Jwt__Secret=ThisIsAVerySecureSecretKeyForJwtTokenGenerationMustBeAtLeast32Characters!
+      - Jwt__Issuer=MerchantPaymentAPI
+      - Jwt__Audience=MerchantPaymentClient
+    
+    ports:
+      - "5000:8080"
+    
+    depends_on:
+      mysql:
+        condition: service_healthy
+    
+    networks:
+      - merchant-network
+    
+    restart: unless-stopped
+
+volumes:
+  mysql_data:
+
+networks:
+  merchant-network:
+    driver: bridge

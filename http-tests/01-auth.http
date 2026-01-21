@@ -1,0 +1,84 @@
+# ============================================================
+# API TEST FILE - AUTHENTICATION
+# ============================================================
+#
+# This file allows you to test the API directly from VS Code!
+#
+# HOW TO USE:
+# 1. Install "REST Client" extension in VS Code
+#    (Search for "humao.rest-client" in extensions)
+# 2. Start the API (make docker-up OR make run)
+# 3. Click "Send Request" above each request
+#
+# TIP: Variables like @baseUrl and @token are shared across requests
+# ============================================================
+
+# Base URL - Change if running on different port
+@baseUrl = http://localhost:5000
+
+# ============================================================
+# 1. REGISTER A NEW USER
+# ============================================================
+# Creates a new user account
+# Returns: User info (without password)
+
+### Register User
+# @name registerUser
+POST {{baseUrl}}/api/auth/register
+Content-Type: application/json
+
+{
+    "username": "testuser",
+    "email": "testuser@example.com",
+    "password": "Password123!"
+}
+
+# ============================================================
+# 2. LOGIN TO GET JWT TOKEN
+# ============================================================
+# Logs in and returns a JWT token
+# Save the token for authenticated requests
+
+### Login User
+# @name loginUser
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+    "username": "testuser",
+    "password": "Password123!"
+}
+
+# ============================================================
+# SAVE THE TOKEN FOR OTHER REQUESTS
+# ============================================================
+# This line extracts the token from the login response
+# Use it like: Authorization: Bearer {{token}}
+
+@token = {{loginUser.response.body.token}}
+
+# ============================================================
+# 3. REGISTER ADMIN USER (Optional)
+# ============================================================
+
+### Register Admin User
+POST {{baseUrl}}/api/auth/register
+Content-Type: application/json
+
+{
+    "username": "admin",
+    "email": "admin@example.com",
+    "password": "AdminPass123!"
+}
+
+### Login as Admin
+# @name loginAdmin
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+    "username": "admin",
+    "password": "AdminPass123!"
+}
+
+@adminToken = {{loginAdmin.response.body.token}}
